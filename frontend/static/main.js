@@ -57,7 +57,16 @@ function login() {
 function createPostElement(post) {
     const postDiv = document.createElement('div');
     postDiv.className = 'post';
-    postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p><p><strong>Author:</strong> ${post.author}</p><p><strong>Date:</strong> ${post.date}</p><button onclick="deletePost(${post.id})">Delete</button>`;
+    postDiv.innerHTML = `
+        <h2>${post.title}</h2>
+        <p>${post.content}</p>
+        <p><strong>Author:</strong> ${post.author}</p>
+        <p><strong>Date:</strong> ${post.date}</p>
+        <div class="post-buttons">
+            <button onclick="deletePost(${post.id})">Delete</button>
+            <button onclick="updatePost(${post.id})">Update</button>
+        </div>
+    `;
     return postDiv;
 }
 
