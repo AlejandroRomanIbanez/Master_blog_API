@@ -7,7 +7,8 @@ window.onload = function() {
         document.getElementById('api-base-url').value = savedBaseUrl;
     loadPosts();
     }
-}
+    document.getElementById('sort-button').addEventListener('click', sortPosts);
+};
 
 function register() {
     var baseUrl = document.getElementById('api-base-url').value;
@@ -51,6 +52,41 @@ function login() {
         loadPosts();
     })
     .catch(error => console.error('Error:', error));
+}
+
+function createPostElement(post) {
+    const postDiv = document.createElement('div');
+    postDiv.className = 'post';
+    postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p><p><strong>Author:</strong> ${post.author}</p><p><strong>Date:</strong> ${post.date}</p><button onclick="deletePost(${post.id})">Delete</button>`;
+    return postDiv;
+}
+
+function sortPosts() {
+    // Retrieve the sort and direction values from the select elements
+    var sortValue = document.getElementById('sort-by').value;
+    var directionValue = document.getElementById('sort-direction').value;
+
+    // Retrieve the base URL from the input field
+    var baseUrl = document.getElementById('api-base-url').value;
+
+    // Construct the URL with the sorting parameters
+    var url = baseUrl + '/posts?sort=' + sortValue + '&direction=' + directionValue;
+
+    // Use the Fetch API to send a GET request to the constructed URL
+    fetch(url)
+        .then(response => response.json())  // Parse the JSON data from the response
+        .then(data => {  // Once the data is ready, we can use it
+            // Clear out the post container first
+            const postContainer = document.getElementById('post-container');
+            postContainer.innerHTML = '';
+
+            // For each post in the response, create a new post element and add it to the page
+            data.forEach(post => {
+                const postDiv = createPostElement(post);
+                postContainer.appendChild(postDiv);
+            });
+        })
+        .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
 }
 
 // Function to fetch all the posts from the API and display them on the page
@@ -97,6 +133,7 @@ function addPost() {
     var accessToken = localStorage.getItem('accessToken');
     var postTitle = document.getElementById('post-title').value;
     var postContent = document.getElementById('post-content').value;
+    var postAuthor = document.getElementById('post-author').value;
     var currentDate = new Date();
     var formattedDate = currentDate.toLocaleDateString();
 
@@ -107,7 +144,7 @@ function addPost() {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + accessToken
         },
-        body: JSON.stringify({ title: postTitle, content: postContent, date: formattedDate })
+        body: JSON.stringify({ title: postTitle, content: postContent, author: postAuthor, date: formattedDate })
     })
     .then(response => response.json())  // Parse the JSON data from the response
     .then(post => {
@@ -148,13 +185,11 @@ function searchPosts() {
     var title = document.getElementById('search-title').value;
     var content = document.getElementById('search-content').value;
     var author = document.getElementById('search-author').value;
-    var date = document.getElementById('search-date').value;
 
     var url = new URL(baseUrl + '/posts/search');
     if (title) url.searchParams.append('title', title);
     if (content) url.searchParams.append('content', content);
     if (author) url.searchParams.append('author', author);
-    if (date) url.searchParams.append('date', date);
 
     fetch(url, {
         headers: {
@@ -169,8 +204,14 @@ function searchPosts() {
         data.forEach(post => {
             const postDiv = document.createElement('div');
             postDiv.className = 'post';
-            postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p>
-            <button onclick="deletePost(${post.id})">Delete</button>`;
+            postDiv.innerHTML = `<h2>${post.title}</h2>
+                                 <p>${post.content}</p>
+                                 <p>Author: ${post.author}</p>
+                                 <p>Date: ${post.date}</p>
+                                 <div class="post-buttons">
+                                     <button onclick="deletePost(${post.id})">Delete</button>
+                                     <button onclick="updatePost(${post.id})">Update</button>
+                                 </div>`;
             postContainer.appendChild(postDiv);
         });
     })
