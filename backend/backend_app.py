@@ -1,5 +1,5 @@
 import json
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, session, redirect, current_app
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_limiter import Limiter
@@ -12,8 +12,8 @@ app.config['JWT_SECRET_KEY'] = 'pass'
 jwt = JWTManager(app)
 limiter = Limiter(app)
 
-POSTS_FILE = "../backend/posts.json"
-USERS_FILE = "../backend/users.json"
+POSTS_FILE = "backend/posts.json"
+USERS_FILE = "backend/users.json"
 
 
 def open_files(file_data):
@@ -153,24 +153,33 @@ def delete_post(id):
     }, 200
 
 
-@app.route('/api/posts/<int:id>', methods=['PUT'])
+@app.route('/api/posts/<int:post_id>', methods=['PUT'])
 @jwt_required()
-def update_post(id):
+def update_post(post_id):
     posts = open_files(POSTS_FILE)
-    post = find_post_by_id(id)
-    if post is None:
+    post_index = None
+    for i, post in enumerate(posts):
+        if post['id'] == post_id:
+            post_index = i
+            break
+    if post_index is None:
         return jsonify({"error": "Post was not found"}), 404
     updated_post = request.get_json()
     if 'title' in updated_post:
-        post['title'] = updated_post['title']
+        posts[post_index]['title'] = updated_post['title']
     if 'content' in updated_post:
-        post['content'] = updated_post['content']
+        posts[post_index]['content'] = updated_post['content']
     if 'author' in updated_post:
-        post['author'] = updated_post['author']
+        posts[post_index]['author'] = updated_post['author']
     if 'date' in updated_post:
-        post['date'] = updated_post['date']
-    save_files(POSTS_FILE, posts)
-    return jsonify(post), 200
+        posts[post_index]['date'] = updated_post['date']
+    if 'categories' in updated_post:
+        posts[post_index]['categories'] = updated_post['categories']
+    if 'tags' in updated_post:
+        posts[post_index]['tags'] = updated_post['tags']
+    save_files(POSTS_FILE, posts)  # Save the modified posts data back to the file
+    return jsonify(posts[post_index]), 200
+
 
 
 @app.route('/api/posts/search', methods=['GET'])

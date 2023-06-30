@@ -58,15 +58,19 @@ function createPostElement(post) {
     const postDiv = document.createElement('div');
     postDiv.className = 'post';
     postDiv.innerHTML = `
-        <h2>${post.title}</h2>
-        <p>${post.content}</p>
-        <p><strong>Author:</strong> ${post.author}</p>
-        <p><strong>Date:</strong> ${post.date}</p>
-        <div class="post-buttons">
-            <button onclick="deletePost(${post.id})">Delete</button>
-            <button onclick="updatePost(${post.id})">Update</button>
-        </div>
-    `;
+    <h2>${post.title}</h2>
+    <p>${post.content}</p>
+    <p><strong>Author:</strong> ${post.author}</p>
+    <p><strong>Date:</strong> ${post.date}</p>
+    <div class="post-buttons">
+        <button onclick="deletePost(${post.id})">Delete</button>
+    </div>
+    <div class="input-field">
+        <input type="text" id="update-title-${post.id}" value="${post.title}" />
+        <textarea id="update-content-${post.id}">${post.content}</textarea>
+        <button onclick="updatePost(${post.id})">Update</button>
+    </div>
+`;
     return postDiv;
 }
 
@@ -124,9 +128,13 @@ function loadPosts() {
                 postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p>
                 <p>Author: ${post.author}</p>
                 <p>Date: ${post.date}</p>
+                <div class="input-field">
+                    <input type="text" id="update-title-${post.id}" placeholder="Enter post title" />
+                    <textarea id="update-content-${post.id}" placeholder="Enter post content"></textarea>
+                    <button onclick="updatePost(${post.id})">Update</button>
+                </div>
                   <div class="post-buttons">
                     <button onclick="deletePost(${post.id})">Delete</button>
-                    <button onclick="updatePost(${post.id})">Update</button>
                   </div>
                 `;
                 postContainer.appendChild(postDiv);
@@ -231,21 +239,30 @@ function searchPosts() {
 function updatePost(postId) {
     var baseUrl = document.getElementById('api-base-url').value;
     var accessToken = localStorage.getItem('accessToken');
-    var postTitle = document.getElementById('update-title').value;
-    var postContent = document.getElementById('update-content').value;
 
+    // Get the updated post data from the input fields
+    var title = document.getElementById('update-title-' + postId).value;
+    var content = document.getElementById('update-content-' + postId).value;
+
+    // Create a JSON object with the updated post data
+    var updatedPost = {
+        title: title,
+        content: content
+    };
+    console.log(updatedPost);
+
+    // Use the Fetch API to send a PUT request to the specific post's endpoint
     fetch(baseUrl + '/posts/' + postId, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + accessToken
         },
-        body: JSON.stringify({ title: postTitle, content: postContent })
+        body: JSON.stringify(updatedPost)
     })
-    .then(response => response.json())
-    .then(updatedPost => {
-        console.log('Post updated:', updatedPost);
-        loadPosts();
+    .then(response => {
+        console.log('Post updated:', postId);
+        loadPosts(); // Reload the posts after updating one
     })
     .catch(error => console.error('Error:', error));
 }
