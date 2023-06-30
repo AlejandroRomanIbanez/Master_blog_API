@@ -55,23 +55,35 @@ function login() {
 }
 
 function createPostElement(post) {
-    const postDiv = document.createElement('div');
-    postDiv.className = 'post';
-    postDiv.innerHTML = `
+  const postDiv = document.createElement('div');
+  postDiv.className = 'post';
+  postDiv.innerHTML = `
     <h2>${post.title}</h2>
     <p>${post.content}</p>
     <p><strong>Author:</strong> ${post.author}</p>
     <p><strong>Date:</strong> ${post.date}</p>
+    <p><strong>Categories:</strong> ${post.categories.join(', ')}</p>
+    <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+    <div class="comments">
+      <h3>Comments:</h3>
+      ${post.comments.map(comment => `
+        <div class="comment">
+          <p><strong>Author:</strong> ${comment.author}</p>
+          <p><strong>Date:</strong> ${comment.date}</p>
+          <p>${comment.content}</p>
+        </div>
+      `).join('')}
+    </div>
     <div class="post-buttons">
-        <button onclick="deletePost(${post.id})">Delete</button>
+      <button onclick="deletePost(${post.id})">Delete</button>
     </div>
     <div class="input-field">
-        <input type="text" id="update-title-${post.id}" value="${post.title}" />
-        <textarea id="update-content-${post.id}">${post.content}</textarea>
-        <button onclick="updatePost(${post.id})">Update</button>
+      <input type="text" id="update-title-${post.id}" value="${post.title}" />
+      <textarea id="update-content-${post.id}">${post.content}</textarea>
+      <button onclick="updatePost(${post.id})">Update</button>
     </div>
-`;
-    return postDiv;
+  `;
+  return postDiv;
 }
 
 function sortPosts() {
@@ -123,24 +135,38 @@ function loadPosts() {
 
             // For each post in the response, create a new post element and add it to the page
             data.forEach(post => {
-                const postDiv = document.createElement('div');
-                postDiv.className = 'post';
-                postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p>
-                <p>Author: ${post.author}</p>
-                <p>Date: ${post.date}</p>
+            const postDiv = document.createElement('div');
+            postDiv.className = 'post';
+            postDiv.innerHTML = `
+                <h2>${post.title}</h2>
+                <p>${post.content}</p>
+                <p><strong>Author:</strong> ${post.author}</p>
+                <p><strong>Date:</strong> ${post.date}</p>
+                <p><strong>Categories:</strong> ${post.categories.join(', ')}</p>
+                <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+                <div class="comments">
+                    <h3>Comments:</h3>
+                    ${post.comments.map(comment => `
+                        <div class="comment">
+                            <p><strong>Author:</strong> ${comment.author}</p>
+                            <p><strong>Date:</strong> ${comment.date}</p>
+                            <p>${comment.content}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="post-buttons">
+                    <button onclick="deletePost(${post.id})">Delete</button>
+                </div>
                 <div class="input-field">
-                    <input type="text" id="update-title-${post.id}" placeholder="Enter post title" />
-                    <textarea id="update-content-${post.id}" placeholder="Enter post content"></textarea>
+                    <input type="text" id="update-title-${post.id}" value="${post.title}" />
+                    <textarea id="update-content-${post.id}">${post.content}</textarea>
                     <button onclick="updatePost(${post.id})">Update</button>
                 </div>
-                  <div class="post-buttons">
-                    <button onclick="deletePost(${post.id})">Delete</button>
-                  </div>
-                `;
-                postContainer.appendChild(postDiv);
-            });
-        })
-        .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
+            `;
+            postContainer.appendChild(postDiv);
+        });
+    })
+    .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
 }
 
 // Function to send a POST request to the API to add a new post
