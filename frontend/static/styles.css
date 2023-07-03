@@ -20,7 +20,7 @@ body {
 }
 
 .input-field {
-  display: flex;
+  display: inline-block;
   align-items: center;
   margin-bottom: 20px;
 }
@@ -95,4 +95,15 @@ body {
 
 .post button:hover {
   background-color: #cc0000;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 20px 0;
+}
+
+textarea {
+  height: 150px;
+  width: 500px;
 }

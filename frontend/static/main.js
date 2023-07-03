@@ -62,25 +62,34 @@ function createPostElement(post) {
     <p>${post.content}</p>
     <p><strong>Author:</strong> ${post.author}</p>
     <p><strong>Date:</strong> ${post.date}</p>
-    <p><strong>Categories:</strong> ${post.categories.join(', ')}</p>
-    <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+    <p><strong>Categories:</strong> ${post.categories ? post.categories.join(', ') : ''}</p>
+    <p><strong>Tags:</strong> ${post.tags ? post.tags.join(', ') : ''}</p>
+    <p><strong>Comments:</strong> ${post.comments ? post.comments.length : 0}</p>
     <div class="comments">
       <h3>Comments:</h3>
-      ${post.comments.map(comment => `
+      ${post.comments ? post.comments.map(comment => `
         <div class="comment">
           <p><strong>Author:</strong> ${comment.author}</p>
           <p><strong>Date:</strong> ${comment.date}</p>
           <p>${comment.content}</p>
         </div>
-      `).join('')}
+      `).join('') : ''}
     </div>
     <div class="post-buttons">
       <button onclick="deletePost(${post.id})">Delete</button>
     </div>
     <div class="input-field">
-      <input type="text" id="update-title-${post.id}" value="${post.title}" />
-      <textarea id="update-content-${post.id}">${post.content}</textarea>
+      <input type="text" id="update-title-${post.id}" placeholder="Enter Title" value="${post.title}" />
+      <textarea id="update-content-${post.id}" placeholder="Enter Content">${post.content}</textarea>
+      <input id="update-author-${post.id}" placeholder="Enter author" value="${post.author}">
+      <input id="update-categories-${post.id}" placeholder="Enter categories" value="${post.categories}">
+      <input id="update-tags-${post.id}" placeholder="Enter tags" value="${post.tags}">
       <button onclick="updatePost(${post.id})">Update</button>
+      <form onsubmit="addComment(event, ${post.id})">
+        <input type="text" id="comment-author-${post.id}" placeholder="Author" required />
+        <textarea id="comment-content-${post.id}" placeholder="Comment" required></textarea>
+        <button type="submit">Add Comment</button>
+      </form>
     </div>
   `;
   return postDiv;
@@ -142,25 +151,39 @@ function loadPosts() {
                 <p>${post.content}</p>
                 <p><strong>Author:</strong> ${post.author}</p>
                 <p><strong>Date:</strong> ${post.date}</p>
-                <p><strong>Categories:</strong> ${post.categories.join(', ')}</p>
-                <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+                <p><strong>Categories:</strong> ${post.categories}</p>
+                <p><strong>Tags:</strong> ${post.tags}</p>
                 <div class="comments">
                     <h3>Comments:</h3>
-                    ${post.comments.map(comment => `
+                    ${post.comments ? post.comments.map(comment => `
                         <div class="comment">
                             <p><strong>Author:</strong> ${comment.author}</p>
                             <p><strong>Date:</strong> ${comment.date}</p>
                             <p>${comment.content}</p>
                         </div>
-                    `).join('')}
+                    `).join('') : ''}
                 </div>
                 <div class="post-buttons">
                     <button onclick="deletePost(${post.id})">Delete</button>
                 </div>
                 <div class="input-field">
-                    <input type="text" id="update-title-${post.id}" value="${post.title}" />
-                    <textarea id="update-content-${post.id}">${post.content}</textarea>
+                    <input type="text" id="update-title-${post.id}" placeholder="Enter Title"/>
+                    <textarea id="update-content-${post.id}" placeholder="Enter Content"></textarea>
+                    <input id="update-author-${post.id}" placeholder="Enter author">
+                    <input id="update-categories-${post.id}" placeholder="Enter categories">
+                    <input id="update-tags-${post.id}" placeholder="Enter tags">
                     <button onclick="updatePost(${post.id})">Update</button>
+
+                <hr>
+
+
+                <div class="input-field">
+                    <form onsubmit="addComment(event, ${post.id})">
+                        <input type="text" id="comment-author-${post.id}" placeholder="Author" required />
+                        <textarea id="comment-content-${post.id}" placeholder="Comment" required></textarea>
+                        <button type="submit">Add Comment</button>
+                    </form>
+                </div>
                 </div>
             `;
             postContainer.appendChild(postDiv);
@@ -177,6 +200,8 @@ function addPost() {
     var postTitle = document.getElementById('post-title').value;
     var postContent = document.getElementById('post-content').value;
     var postAuthor = document.getElementById('post-author').value;
+    var postTags = document.getElementById('post-tags').value.split(',').map(tag => tag.trim());
+    var postCategories = document.getElementById('post-categories').value.split(',').map(category => category.trim());
     var currentDate = new Date();
     var formattedDate = currentDate.toLocaleDateString();
 
@@ -187,7 +212,14 @@ function addPost() {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + accessToken
         },
-        body: JSON.stringify({ title: postTitle, content: postContent, author: postAuthor, date: formattedDate })
+        body: JSON.stringify({
+            title: postTitle,
+            content: postContent,
+            author: postAuthor,
+            date: formattedDate,
+            tags: postTags,
+            categories: postCategories
+        })
     })
     .then(response => response.json())  // Parse the JSON data from the response
     .then(post => {
@@ -269,15 +301,20 @@ function updatePost(postId) {
     // Get the updated post data from the input fields
     var title = document.getElementById('update-title-' + postId).value;
     var content = document.getElementById('update-content-' + postId).value;
+    var author = document.getElementById('update-author-' + postId).value;
+    var tags = document.getElementById('update-tags-' + postId).value;
+    var categories = document.getElementById('update-categories-' + postId).value;
 
     // Create a JSON object with the updated post data
     var updatedPost = {
         title: title,
-        content: content
+        content: content,
+        author: author,
+        tags: tags,
+        categories: categories
     };
-    console.log(updatedPost);
 
-    // Use the Fetch API to send a PUT request to the specific post's endpoint
+    // Use the Fetch API to send a PUT request to update the post
     fetch(baseUrl + '/posts/' + postId, {
         method: 'PUT',
         headers: {
@@ -286,9 +323,42 @@ function updatePost(postId) {
         },
         body: JSON.stringify(updatedPost)
     })
-    .then(response => {
-        console.log('Post updated:', postId);
-        loadPosts(); // Reload the posts after updating one
+        .then(response => {
+            console.log('Post updated:', postId);
+            loadPosts(); // Reload the posts after updating one
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+
+function addComment(event, postId) {
+  event.preventDefault();
+
+  var baseUrl = document.getElementById('api-base-url').value;
+  var accessToken = localStorage.getItem('accessToken');
+  var author = document.getElementById(`comment-author-${postId}`).value;
+  var content = document.getElementById(`comment-content-${postId}`).value;
+  var currentDate = new Date();
+  var formattedDate = currentDate.toLocaleDateString();
+
+  var comment = {
+    author: author,
+    content: content,
+    date: formattedDate
+  };
+
+  fetch(baseUrl + '/posts/' + postId + '/comments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + accessToken
+    },
+    body: JSON.stringify(comment)
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Comment added:', data);
+      loadPosts(); // Reload the posts after adding a comment
     })
     .catch(error => console.error('Error:', error));
 }

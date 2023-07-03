@@ -41,8 +41,11 @@ def bad_request_error(error):
 
 
 def generate_id(posts):
-    new_id = max(post['id'] for post in posts) + 1
-    return new_id
+    if not posts:
+        return 1
+    else:
+        new_id = max(post.get('id', 0) for post in posts) + 1
+        return new_id
 
 
 def sort_list(posts, sort, direction):
@@ -177,7 +180,7 @@ def update_post(post_id):
         posts[post_index]['categories'] = updated_post['categories']
     if 'tags' in updated_post:
         posts[post_index]['tags'] = updated_post['tags']
-    save_files(POSTS_FILE, posts)  # Save the modified posts data back to the file
+    save_files(POSTS_FILE, posts)
     return jsonify(posts[post_index]), 200
 
 
@@ -211,12 +214,20 @@ def add_comment(id):
         return jsonify({"error": "Post was not found"}), 404
     new_comment = request.get_json()
     if 'content' in new_comment and 'author' in new_comment:
+        if 'comments' not in post:
+            post['comments'] = []
         new_comment_id = generate_id(post['comments'])
         new_comment['id'] = new_comment_id
+        new_comment['content'] = new_comment['content']
         new_comment['author'] = new_comment['author']
         new_comment['date'] = new_comment['date']
         post['comments'].append(new_comment)
-        save_files(POSTS_FILE, posts)
+        for i, p in enumerate(posts):
+            if p['id'] == id:
+                posts[i] = post
+                break
+
+        save_files(POSTS_FILE, posts)  # Update the posts list
         return jsonify(new_comment), 201
     else:
         error_messages = []
@@ -233,6 +244,8 @@ def get_comments(id):
     post = find_post_by_id(id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
+    if 'comments' not in post:
+        post['comments'] = []
     return jsonify(post['comments'])
 
 
@@ -245,8 +258,14 @@ def add_category(id):
         return jsonify({"error": "Post was not found"}), 404
     new_category = request.get_json()
     if 'category' in new_category:
+        if 'categories' not in post:
+            post['categories'] = []
         post['categories'].append(new_category['category'])
-        save_files(new_category)
+        for i, p in enumerate(posts):
+            if p['id'] == id:
+                posts[i] = post
+                break
+        save_files(POSTS_FILE, posts)
         return jsonify(new_category), 201
     else:
         return jsonify({"error": "Missing field: category"}), 400
@@ -269,11 +288,18 @@ def add_tag(id):
         return jsonify({"error": "Post was not found"}), 404
     new_tag = request.get_json()
     if 'tags' in new_tag:
+        if 'tags' not in post:
+            post['tags'] = []
         post['tags'].append(new_tag['tags'])
+        for i, p in enumerate(posts):
+            if p['id'] == id:
+                posts[i] = post
+                break
         save_files(POSTS_FILE, posts)
         return jsonify(new_tag), 201
     else:
-        return jsonify({"error": "Missing field: tags"})
+        return jsonify({"error": "Missing field: tags"}), 400
+
 
 
 @app.route('/api/posts/<int:id>/tags', methods=['GET'])
