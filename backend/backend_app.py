@@ -6,6 +6,11 @@ from flask_limiter import Limiter
 
 
 def configure_app():
+    """
+    Configure the Flask application.
+    Returns:
+        Flask: The configured Flask application.
+    """
     app = Flask(__name__)
     app.secret_key = "pass1"
     app.config['JWT_SECRET_KEY'] = 'pass'
@@ -13,6 +18,13 @@ def configure_app():
 
 
 def initialize_jwt_and_limiter(app_flask):
+    """
+    Initialize JWT and request rate limiter for the Flask application.
+    Args:
+        app_flask (Flask): The Flask application instance.
+    Returns:
+        tuple: A tuple containing the initialized JWTManager and Limiter instances.
+    """
     jwt = JWTManager(app_flask)
     limiter = Limiter(app_flask)
     return jwt, limiter
@@ -84,9 +96,8 @@ def generate_id(posts):
     """
     if not posts:
         return 1
-    else:
-        new_id = max(post.get('id', 0) for post in posts) + 1
-        return new_id
+    new_id = max(post.get('id', 0) for post in posts) + 1
+    return new_id
 
 
 def sort_list(posts, sort, direction):
@@ -191,18 +202,17 @@ def add_post():
         posts.append(new_post)
         save_files(POSTS_FILE, posts)
         return jsonify(new_post), 201
-    else:
-        error_messages = []
-        if 'title' not in new_post:
-            error_messages.append("Missing field: title")
-        if 'content' not in new_post:
-            error_messages.append("Missing field: content")
-        if 'author' not in new_post:
-            error_messages.append("Missing field: author")
-        if 'date' not in new_post:
-            error_messages.append("Missing field: date")
-        error_message = {"error": ", ".join(error_messages)}
-        return jsonify(error_message), 400
+    error_messages = []
+    if 'title' not in new_post:
+        error_messages.append("Missing field: title")
+    if 'content' not in new_post:
+        error_messages.append("Missing field: content")
+    if 'author' not in new_post:
+        error_messages.append("Missing field: author")
+    if 'date' not in new_post:
+        error_messages.append("Missing field: date")
+    error_message = {"error": ", ".join(error_messages)}
+    return jsonify(error_message), 400
 
 
 def find_post_by_id(post_id):
@@ -324,21 +334,20 @@ def add_comment(post_id):
         new_comment['author'] = new_comment['author']
         new_comment['date'] = new_comment['date']
         post['comments'].append(new_comment)
-        for i, p in enumerate(posts):
-            if p['id'] == post_id:
-                posts[i] = post
+        for index, current_post in enumerate(posts):
+            if current_post['id'] == post_id:
+                posts[index] = post
                 break
 
         save_files(POSTS_FILE, posts)  # Update the posts list
         return jsonify(new_comment), 201
-    else:
-        error_messages = []
-        if 'content' not in new_comment:
-            error_messages.append("Missing field: content")
-        if 'author' not in new_comment:
-            error_messages.append("Missing field: author")
-        error_message = {"error": ", ".join(error_messages)}
-        return jsonify(error_message), 400
+    error_messages = []
+    if 'content' not in new_comment:
+        error_messages.append("Missing field: content")
+    if 'author' not in new_comment:
+        error_messages.append("Missing field: author")
+    error_message = {"error": ", ".join(error_messages)}
+    return jsonify(error_message), 400
 
 
 @app.route('/api/posts/<int:id>/comments', methods=['GET'])
@@ -377,14 +386,13 @@ def add_category(post_id):
         if 'categories' not in post:
             post['categories'] = []
         post['categories'].append(new_category['category'])
-        for i, p in enumerate(posts):
-            if p['id'] == post_id:
-                posts[i] = post
+        for index, current_post in enumerate(posts):
+            if current_post['id'] == post_id:
+                posts[index] = post
                 break
         save_files(POSTS_FILE, posts)
         return jsonify(new_category), 201
-    else:
-        return jsonify({"error": "Missing field: category"}), 400
+    return jsonify({"error": "Missing field: category"}), 400
 
 
 @app.route('/api/posts/<int:id>/categories', methods=['GET'])
@@ -421,14 +429,13 @@ def add_tag(post_id):
         if 'tags' not in post:
             post['tags'] = []
         post['tags'].append(new_tag['tags'])
-        for i, p in enumerate(posts):
-            if p['id'] == post_id:
-                posts[i] = post
+        for index, current_post in enumerate(posts):
+            if current_post['id'] == post_id:
+                posts[index] = post
                 break
         save_files(POSTS_FILE, posts)
         return jsonify(new_tag), 201
-    else:
-        return jsonify({"error": "Missing field: tags"}), 400
+    return jsonify({"error": "Missing field: tags"}), 400
 
 
 @app.route('/api/posts/<int:id>/tags', methods=['GET'])
