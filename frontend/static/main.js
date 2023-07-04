@@ -62,9 +62,9 @@ function createPostElement(post) {
     <p>${post.content}</p>
     <p><strong>Author:</strong> ${post.author}</p>
     <p><strong>Date:</strong> ${post.date}</p>
-    <p><strong>Categories:</strong> ${post.categories ? post.categories.join(', ') : ''}</p>
-    <p><strong>Tags:</strong> ${post.tags ? post.tags.join(', ') : ''}</p>
-    <p><strong>Comments:</strong> ${post.comments ? post.comments.length : 0}</p>
+    <p><strong>Categories:</strong> ${post.categories}</p>
+    <p><strong>Tags:</strong> ${post.tags}</p>
+    <p><strong>Comments:</strong> ${post.comments}</p>
     <div class="comments">
       <h3>Comments:</h3>
       ${post.comments ? post.comments.map(comment => `
@@ -79,11 +79,11 @@ function createPostElement(post) {
       <button onclick="deletePost(${post.id})">Delete</button>
     </div>
     <div class="input-field">
-      <input type="text" id="update-title-${post.id}" placeholder="Enter Title" value="${post.title}" />
-      <textarea id="update-content-${post.id}" placeholder="Enter Content">${post.content}</textarea>
-      <input id="update-author-${post.id}" placeholder="Enter author" value="${post.author}">
-      <input id="update-categories-${post.id}" placeholder="Enter categories" value="${post.categories}">
-      <input id="update-tags-${post.id}" placeholder="Enter tags" value="${post.tags}">
+      <input type="text" id="update-title-${post.id}" placeholder="Enter Title" />
+      <textarea id="update-content-${post.id}" placeholder="Enter Content"></textarea>
+      <input id="update-author-${post.id}" placeholder="Enter author" >
+      <input id="update-categories-${post.id}" placeholder="Enter categories">
+      <input id="update-tags-${post.id}" placeholder="Enter tags">
       <button onclick="updatePost(${post.id})">Update</button>
       <form onsubmit="addComment(event, ${post.id})">
         <input type="text" id="comment-author-${post.id}" placeholder="Author" required />
@@ -97,6 +97,7 @@ function createPostElement(post) {
 
 function sortPosts() {
     // Retrieve the sort and direction values from the select elements
+    console.log('Sorting posts');
     var sortValue = document.getElementById('sort-by').value;
     var directionValue = document.getElementById('sort-direction').value;
 
