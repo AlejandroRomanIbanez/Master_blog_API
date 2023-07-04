@@ -339,7 +339,7 @@ def add_comment(post_id):
                 posts[index] = post
                 break
 
-        save_files(POSTS_FILE, posts)  # Update the posts list
+        save_files(POSTS_FILE, posts)
         return jsonify(new_comment), 201
     error_messages = []
     if 'content' not in new_comment:
