@@ -1,16 +1,26 @@
 import json
-from flask import Flask, jsonify, request, session, redirect, current_app
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
-app = Flask(__name__)
-app.secret_key = "pass1"
+
+def configure_app():
+    app = Flask(__name__)
+    app.secret_key = "pass1"
+    app.config['JWT_SECRET_KEY'] = 'pass'
+    return app
+
+def initialize_jwt_and_limiter(app):
+    jwt = JWTManager(app)
+    limiter = Limiter(app)
+    return jwt, limiter
+
+
+app = configure_app()
 CORS(app)
-app.config['JWT_SECRET_KEY'] = 'pass'
-jwt = JWTManager(app)
-limiter = Limiter(app)
+jwt, limiter = initialize_jwt_and_limiter(app)
+
 
 POSTS_FILE = "backend/posts.json"
 USERS_FILE = "backend/users.json"
@@ -44,11 +54,9 @@ def save_files(file_data, data):
 
 
 @app.errorhandler(404)
-def not_found_error(error):
+def not_found_error():
     """
     Handle 404 Not Found error.
-    Args:
-        error: The error object.
     Returns:
         dict: JSON response with an error message and status code 404.
     """
@@ -56,11 +64,9 @@ def not_found_error(error):
 
 
 @app.errorhandler(400)
-def bad_request_error(error):
+def bad_request_error():
     """
     Handle 400 Bad Request error.
-    Args:
-        error: The error object.
     Returns:
         dict: JSON response with an error message and status code 400.
     """
@@ -214,22 +220,22 @@ def find_post_by_id(post_id):
 
 @app.route('/api/posts/<int:id>', methods=['DELETE'])
 @jwt_required()
-def delete_post(id):
+def delete_post(post_id):
     """
     Delete a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with a success message or an error message with status code 404.
     """
     posts = open_files(POSTS_FILE)
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     posts.remove(post)
     save_files(POSTS_FILE, posts)
     return {
-        "message": f"Post with id {id} has been deleted successfully."
+        "message": f"Post with id {post_id} has been deleted successfully."
     }, 200
 
 
@@ -295,16 +301,16 @@ def search_post():
 
 @app.route('/api/posts/<int:id>/comments', methods=['POST'])
 @jwt_required()
-def add_comment(id):
+def add_comment(post_id):
     """
     Add a comment to a post.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the new comment or an error message with status code 404.
     """
     posts = open_files(POSTS_FILE)
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     new_comment = request.get_json()
@@ -318,7 +324,7 @@ def add_comment(id):
         new_comment['date'] = new_comment['date']
         post['comments'].append(new_comment)
         for i, p in enumerate(posts):
-            if p['id'] == id:
+            if p['id'] == post_id:
                 posts[i] = post
                 break
 
@@ -335,15 +341,15 @@ def add_comment(id):
 
 
 @app.route('/api/posts/<int:id>/comments', methods=['GET'])
-def get_comments(id):
+def get_comments(post_id):
     """
     Get the comments of a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the list of comments or an error message with status code 404.
     """
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     if 'comments' not in post:
@@ -353,16 +359,16 @@ def get_comments(id):
 
 @app.route('/api/posts/<int:id>/categories', methods=['POST'])
 @jwt_required()
-def add_category(id):
+def add_category(post_id):
     """
     Add a category to a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the new category or an error message with status code 404.
     """
     posts = open_files(POSTS_FILE)
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     new_category = request.get_json()
@@ -371,7 +377,7 @@ def add_category(id):
             post['categories'] = []
         post['categories'].append(new_category['category'])
         for i, p in enumerate(posts):
-            if p['id'] == id:
+            if p['id'] == post_id:
                 posts[i] = post
                 break
         save_files(POSTS_FILE, posts)
@@ -381,15 +387,15 @@ def add_category(id):
 
 
 @app.route('/api/posts/<int:id>/categories', methods=['GET'])
-def get_categories(id):
+def get_categories(post_id):
     """
     Get the categories of a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the list of categories or an error message with status code 404.
     """
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     return jsonify(post['categories'])
@@ -397,16 +403,16 @@ def get_categories(id):
 
 @app.route('/api/posts/<int:id>/tags', methods=['POST'])
 @jwt_required()
-def add_tag(id):
+def add_tag(post_id):
     """
     Add a tag to a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the new tag or an error message with status code 404.
     """
     posts = open_files(POSTS_FILE)
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     new_tag = request.get_json()
@@ -415,7 +421,7 @@ def add_tag(id):
             post['tags'] = []
         post['tags'].append(new_tag['tags'])
         for i, p in enumerate(posts):
-            if p['id'] == id:
+            if p['id'] == post_id:
                 posts[i] = post
                 break
         save_files(POSTS_FILE, posts)
@@ -425,7 +431,7 @@ def add_tag(id):
 
 
 @app.route('/api/posts/<int:id>/tags', methods=['GET'])
-def get_tags(id):
+def get_tags(post_id):
     """
     Get the tags of a post by ID.
     Args:
@@ -433,7 +439,7 @@ def get_tags(id):
     Returns:
         dict: JSON response with the list of tags or an error message with status code 404.
     """
-    post = find_post_by_id(id)
+    post = find_post_by_id(post_id)
     if post is None:
         return jsonify({"error": "Post was not found"}), 404
     return jsonify(post['tags'])
