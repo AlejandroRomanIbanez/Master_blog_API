@@ -11,9 +11,10 @@ def configure_app():
     app.config['JWT_SECRET_KEY'] = 'pass'
     return app
 
-def initialize_jwt_and_limiter(app):
-    jwt = JWTManager(app)
-    limiter = Limiter(app)
+
+def initialize_jwt_and_limiter(app_flask):
+    jwt = JWTManager(app_flask)
+    limiter = Limiter(app_flask)
     return jwt, limiter
 
 
@@ -435,7 +436,7 @@ def get_tags(post_id):
     """
     Get the tags of a post by ID.
     Args:
-        id (int): The ID of the post.
+        post_id (int): The ID of the post.
     Returns:
         dict: JSON response with the list of tags or an error message with status code 404.
     """
